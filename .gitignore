@@ -1,0 +1,42 @@
+# Ignore Visual Studio specific files
+.vs/
+*.user
+*.suo
+*.cache
+*.pdb
+*.obj
+*.exe
+*.dll
+*.log
+*.csproj.user
+*.aps
+*.ncb
+*.opt
+*.plg
+*.vcxproj.user
+*.vscode/
+*.sqlite
+*.dbmdl
+
+# Ignore build results
+bin/
+obj/
+
+# Ignore test results
+TestResults/
+InstagramLink.Tests/bin/
+InstagramLink.Tests/obj/
+
+# Ignore solution file if not intended for sharing
+InstagramLink.sln
+
+# Ignore publish output
+publish/
+
+# Ignore npm debug file
+npm-debug.log
+
+# Ignore IDE-specific settings
+.idea/
+
+InstagramLink/Properties/launchSettings.json

@@ -27,11 +27,15 @@ TestResults/
 InstagramLink.Tests/bin/
 InstagramLink.Tests/obj/
 
-# Ignore solution file if not intended for sharing
-InstagramLink.sln
+# Ignore local debug launch settings
+InstagramLink/Properties/launchSettings.json
 
-# Ignore publish output
-publish/
+# Ignore migrations and database files
+InstagramLink/Migrations/
+InstagramLink/Data/
+
+# Ignore appsettings containing sensitive information
+InstagramLink/appsettings.json
 
 # Ignore npm debug file
 npm-debug.log
@@ -39,4 +43,5 @@ npm-debug.log
 # Ignore IDE-specific settings
 .idea/
 
-InstagramLink/Properties/launchSettings.json
+# Ignore appsettings containing sensitive information
+InstagramLink/appsettings.json

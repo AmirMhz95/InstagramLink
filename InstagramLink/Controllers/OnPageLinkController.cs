@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using InstagramLink.Models;
-using System.Collections.Generic;
-using System.Linq;
+using InstagramLink.Services;
 
 namespace InstagramLink.Controllers
 {
@@ -9,72 +8,74 @@ namespace InstagramLink.Controllers
     [Route("api/[controller]")]
     public class OnPageLinksController : ControllerBase
     {
-        private static List<OnPageLink> links = new List<OnPageLink>
+        private readonly IOnPageLinksService _service;
+
+        public OnPageLinksController(IOnPageLinksService service)
         {
-            new OnPageLink { Id = 1, Title = "GitHub", Url = "https://github.com" },
-            new OnPageLink { Id = 2, Title = "LinkedIn", Url = "https://linkedin.com" }
-        };
+            _service = service;
+        }
+
 
         [HttpGet]
-        public ActionResult<IEnumerable<OnPageLink>> GetLinks()
+        public IActionResult GetAllLinks()
         {
+            var links = _service.GetAllLinks();
             return Ok(links);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<OnPageLink> GetLink(int id)
+        public IActionResult GetLinkById(int id)
         {
-            var link = links.FirstOrDefault(l => l.Id == id);
+            var link = _service.GetLinkById(id);
             if (link == null)
             {
-                return NotFound(new { Message = "Link not found", LinkId = id });
+                return NotFound("Link not found");
             }
             return Ok(link);
         }
 
         [HttpPost]
-        public ActionResult<OnPageLink> AddLink(OnPageLink link)
+        public IActionResult AddLink([FromBody] OnPageLink link)
         {
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            link.Id = links.Max(l => l.Id) + 1;
-            links.Add(link);
-            return CreatedAtAction(nameof(GetLink), new { id = link.Id }, link);
+            var result = _service.AddLink(link);
+            if (result)
+            {
+                return Ok("Link added successfully");
+            }
+            return BadRequest("Link addition failed");
         }
 
         [HttpPut("{id}")]
-        public ActionResult UpdateLink(int id, OnPageLink updatedLink)
+        public IActionResult UpdateLink(int id, [FromBody] OnPageLink link)
         {
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var link = links.FirstOrDefault(l => l.Id == id);
-            if (link == null)
+            link.Id = id;
+            var result = _service.UpdateLink(link);
+            if (result)
             {
-                return NotFound(new { Message = "Link not found", LinkId = id });
+                return Ok("Link updated successfully");
             }
-            link.Title = updatedLink.Title;
-            link.Url = updatedLink.Url;
-            return NoContent();
+            return BadRequest("Link update failed");
         }
 
         [HttpDelete("{id}")]
-        public ActionResult DeleteLink(int id)
+        public IActionResult DeleteLink(int id)
         {
-            var link = links.FirstOrDefault(l => l.Id == id);
-            if (link == null)
+            var result = _service.DeleteLink(id);
+            if (result)
             {
-                return NotFound(new { Message = "Link not found", LinkId = id });
+                return Ok("Link deleted successfully");
             }
-            links.Remove(link);
-            return NoContent();
+            return BadRequest("Link deletion failed");
         }
     }
 }

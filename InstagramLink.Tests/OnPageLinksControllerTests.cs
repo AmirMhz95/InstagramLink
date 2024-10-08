@@ -2,8 +2,10 @@ using Xunit;
 using Microsoft.AspNetCore.Mvc;
 using InstagramLink.Controllers;
 using InstagramLink.Models;
+using Moq;
 using System.Collections.Generic;
 using System.Linq;
+using InstagramLink.Services;
 
 namespace InstagramLink.Tests
 {
@@ -11,26 +13,58 @@ namespace InstagramLink.Tests
     {
         private OnPageLinksController _controller;
         private List<OnPageLink> _links;
+        private Mock<IOnPageLinksService> _mockService;
 
         public OnPageLinksControllerTests()
         {
-            // Initialize the controller and the in-memory list of links
+            // Initialize the mock service
+            _mockService = new Mock<IOnPageLinksService>();
+
+            // Initialize the in-memory list of links
             _links = new List<OnPageLink>
             {
                 new OnPageLink { Id = 1, Title = "GitHub", Url = "https://github.com" },
                 new OnPageLink { Id = 2, Title = "LinkedIn", Url = "https://linkedin.com" }
             };
-            _controller = new OnPageLinksController();
+
+            // Setup mock service methods
+            _mockService.Setup(service => service.GetAllLinks()).Returns(_links);
+            _mockService.Setup(service => service.GetLinkById(It.IsAny<int>())).Returns((int id) => _links.FirstOrDefault(l => l.Id == id));
+            _mockService.Setup(service => service.AddLink(It.IsAny<OnPageLink>())).Callback((OnPageLink link) =>
+            {
+                link.Id = _links.Count + 1;
+                _links.Add(link);
+            }).Returns((OnPageLink link) => link);
+            _mockService.Setup(service => service.UpdateLink(It.IsAny<OnPageLink>())).Callback((OnPageLink link) =>
+            {
+                var existingLink = _links.FirstOrDefault(l => l.Id == link.Id);
+                if (existingLink != null)
+                {
+                    existingLink.Title = link.Title;
+                    existingLink.Url = link.Url;
+                }
+            });
+            _mockService.Setup(service => service.DeleteLink(It.IsAny<int>())).Callback((int id) =>
+            {
+                var link = _links.FirstOrDefault(l => l.Id == id);
+                if (link != null)
+                {
+                    _links.Remove(link);
+                }
+            });
+
+            // Initialize the controller with the mock service
+            _controller = new OnPageLinksController(_mockService.Object);
         }
 
         [Fact]
         public void GetLinks_ReturnsAllLinks()
         {
             // Act
-            var result = _controller.GetLinks();
+            var result = _controller.GetAllLinks();
 
             // Assert
-            var actionResult = Assert.IsType<OkObjectResult>(result.Result);
+            var actionResult = Assert.IsType<OkObjectResult>(result);
             var returnValue = Assert.IsType<List<OnPageLink>>(actionResult.Value);
             Assert.Equal(2, returnValue.Count);
         }
@@ -39,10 +73,10 @@ namespace InstagramLink.Tests
         public void GetLink_ReturnsCorrectLink()
         {
             // Act
-            var result = _controller.GetLink(1);
+            var result = _controller.GetLinkById(1);
 
             // Assert
-            var actionResult = Assert.IsType<OkObjectResult>(result.Result);
+            var actionResult = Assert.IsType<OkObjectResult>(result);
             var returnValue = Assert.IsType<OnPageLink>(actionResult.Value);
             Assert.Equal(1, returnValue.Id);
             Assert.Equal("GitHub", returnValue.Title);
@@ -52,10 +86,10 @@ namespace InstagramLink.Tests
         public void GetLink_ReturnsNotFound_ForInvalidId()
         {
             // Act
-            var result = _controller.GetLink(99);
+            var result = _controller.GetLinkById(99);
 
             // Assert
-            Assert.IsType<NotFoundResult>(result.Result);
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
@@ -68,7 +102,7 @@ namespace InstagramLink.Tests
             var result = _controller.AddLink(newLink);
 
             // Assert
-            var actionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var actionResult = Assert.IsType<CreatedAtActionResult>(result);
             var returnValue = Assert.IsType<OnPageLink>(actionResult.Value);
             Assert.Equal(3, returnValue.Id); // Assuming there were initially 2 links
             Assert.Equal("StackOverflow", returnValue.Title);
@@ -86,7 +120,7 @@ namespace InstagramLink.Tests
             var result = _controller.AddLink(newLink);
 
             // Assert
-            var actionResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            var actionResult = Assert.IsType<BadRequestObjectResult>(result);
             var returnValue = Assert.IsType<SerializableError>(actionResult.Value);
             Assert.True(returnValue.ContainsKey("Title"));
             Assert.True(returnValue.ContainsKey("Url"));
@@ -141,5 +175,6 @@ namespace InstagramLink.Tests
             // Assert
             Assert.IsType<NotFoundObjectResult>(result);
         }
+
     }
 }

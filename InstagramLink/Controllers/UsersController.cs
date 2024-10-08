@@ -63,6 +63,6 @@ namespace InstagramLink.Controllers
         {
             var users = _userService.GetAllUsers();
             return Ok(users);
-    }
+        }
     }
 }
